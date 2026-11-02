@@ -1,43 +1,43 @@
-# work in Progress
-- siehe changelog.md für Historie
+# Work in progress
+- See changelog.md for the history
 
-# Stromkostentracker
-Datenbank zur Darstellung von historischen Tarifen, Abschlägen und Verbräuchen.
-Eine Custom Integration für Home Assistant zur Berechnung von Stromkosten auf Basis des täglichen Energieverbrauchs.
+# energycosttracker
+Database for displaying historical tariffs, payments, and consumption.
+A Home Assistant custom integration for calculating electricity costs based on daily energy consumption.
 
-# Konfiguration
-Nach der Installation müssen Tarfie und Abschläge mit ihren entsprechenden Zeiträumen in den Einstellungen der Integration eingerichtet werden.
-In den Integrationseinstellungen wählst du unter **Verbrauchserfassung konfigurieren** einen Energiesensor mit der Geräteklasse `energy` und der Einheit `kWh`. Leistungssensoren und Energiesensoren mit einer anderen Einheit werden nicht unterstützt.
-Dann fügst du Abschlagszeitraäume und Tarife inkl. ihrer Zeiträume hinzu.
+# Configuration
+After installation, configure tariffs and payments with their corresponding periods in the integration settings.
+In the integration settings, under **Configure consumption recording**, select an energy sensor with device class `energy` and unit `kWh`. Power sensors and energy sensors with other units are not supported.
+Then add payment periods and tariffs, including their validity periods.
 
-Zu guter Letzt platzierst du die Lovelace-Karte auf einem deiner Dashboards.
-Füge die Karte im Dashboard-Editor über **Karte hinzufügen → Stromkostentracker** hinzu.
+Finally, add the Lovelace card to one of your dashboards.
+In the dashboard editor, add the card using **Add card → energycosttracker**.
 
-# Funktionen
+# Features
 
-- Täglichen Stromverbrauch erfassen
-- Historische Arbeitspreise und Grundpreise importieren
-- Tages- Monats- und Jahreskosten berechnen
-- Kosten und Abschläge als Karte in einem Diagramm anzeigen
+- Record daily electricity consumption
+- Import historical energy and base prices
+- Calculate daily, monthly, and yearly costs
+- Display costs and payments as a chart card
 
-## Arbeitsweise
+## How it works
 
-Die Integration liegt unter `custom_components/stromkostentracker`. Sie stellt in Home Assistant eine native Optionsverwaltung für Tarif- und Abschlagszeiträume bereit. Dort lassen sich Name, Gültigkeitsbeginn, Gültigkeitsende(optional) und die jeweiligen Beträge hinzufügen, bearbeiten und löschen. Bei Abschlägen kann zusätzlich eine Anmerkung hinterlegt werden.
+The integration is located at `custom_components/energycosttracker`. It provides native options in Home Assistant for managing tariff and payment periods. You can add, edit, and delete names, start dates, optional end dates, and amounts. A note can also be added to payments.
 
-Der Sensor **Aktueller Arbeitspreis** stellt den Arbeitspreis des aktuell gültigen Tarifs in `EUR/kWh` bereit. Gibt es für heute keinen gültigen Tarif, ist sein Zustand `unknown`. Er wird beim Start, bei Tarifänderungen und um Mitternacht aktualisiert.
+The **Current energy price** sensor provides the energy price of the currently valid tariff in `EUR/kWh`. If there is no tariff valid today, its state is `unknown`. It is updated at startup, when tariffs change, and at midnight.
 
- Der Zählerstand wird alle 10 Minuten erfasst. Der Zählerstand am Intervallende und der vorherige Stand desselben Sensors werden in die Tabelle `meter_intervals`der Datenbank `energy_cost_tracker.db` gespeichert. Der erste Messpunkt eines Sensors hat keinen Startzählerstand; rückläufige Zählerstände ergeben in der Lovelace-Berechnung einen unbekannten Verbrauch. Ungültige oder nicht verfügbare Messwerte werden nicht gespeichert.
+ The meter reading is recorded every 10 minutes. The reading at the end of the interval and the previous reading from the same sensor are stored in the `meter_intervals` table in the `energy_cost_tracker.db` database. The first reading from a sensor has no starting meter reading; decreasing meter readings result in unknown consumption in the Lovelace calculation. Invalid or unavailable readings are not stored.
 
-Tages- und Monatskosten basieren auf denselben Intervallen. Intervalle, die lokale Mitternacht, Monats- oder Tarifgrenzen überqueren, werden nach ihrer verstrichenen UTC-Zeit aufgeteilt. Das setzt gleichmäßigen Verbrauch im Intervall voraus; es ist keine zusätzliche Messung. Der letzte Teil erhält den verbleibenden Anteil, damit die Teilmengen zusammen dem ursprünglichen Verbrauch entsprechen. Berechnungen verwenden Dezimalzahlen ohne Zwischenrundung. Grundkosten werden nach der bestehenden Regel als Monatsgrundpreis geteilt durch die Kalendertage des Monats berechnet, auch wenn Verbrauchsdaten fehlen. Bekannte Grund- und Verbrauchskosten werden getrennt ausgewiesen; bei Lücken bleibt der nicht rekonstruierbare Verbrauch unbekannt.
+Daily and monthly costs are based on the same intervals. Intervals that cross local midnight, month boundaries, or tariff boundaries are split according to their elapsed UTC time. This assumes uniform consumption over the interval; it does not add another measurement. The final portion receives the remaining amount so that the portions add up to the original consumption. Calculations use decimal values without intermediate rounding. Under the existing rule, base costs are calculated as the monthly base price divided by the number of calendar days in the month, even when consumption data is missing. Known base and consumption costs are shown separately; consumption that cannot be reconstructed remains unknown when data is missing.
 
-Die Tarifverwaltung liest und ändert direkt die Tabellen in `energy_cost_tracker.db`. Die Datenbank wird in den Home-Assistant-Konfigurationsordner neben `configuration.yaml` abgelegt.
+Tariff management reads and updates the tables in `energy_cost_tracker.db` directly. The database is stored in the Home Assistant configuration directory alongside `configuration.yaml`.
 
-## Lovelace-Karte
- Solange die Integration eingerichtet ist, wird das Kartenmodul automatisch im Home-Assistant-Frontend geladen.  Ansicht, Monat und Jahr werden über Dropdown-Felder gewählt; im Jahres-Dropdown stehen die Jahre mit gespeicherten Messdaten zur Verfügung. In der Monatsansicht werden tägliche Kosten und Tagesabschlag verglichen. In der Jahresansicht zeigt jeder Balken die Kosten eines Monats im Vergleich zum Monatsabschlag. Für den laufenden Monat werden Kosten und Abschlag bis heute verglichen; zukünftige Monate haben keine Verbrauchskosten.
+## Lovelace card
+ While the integration is set up, the card module is loaded automatically in the Home Assistant frontend. The view, month, and year are selected using dropdowns; the year dropdown lists years with saved readings. The monthly view compares daily costs and the daily payment. In the yearly view, each bar shows one month's costs compared with the monthly payment. For the current month, costs and payments are compared up to today; future months have no consumption costs.
 
 
-## Datenstruktur
-Alle User-Daten liegen in `energy_cost_tracker.db`. Die Datenbank enthält folgende Tabellen:
+## Data structure
+All user data is stored in `energy_cost_tracker.db`. The database contains the following tables:
 
 ### meter_intervals
 `[id, interval_start_utc, interval_end_utc, consumption_meter_kwh, consumption_meter_start_kwh, note]`
@@ -48,16 +48,16 @@ Alle User-Daten liegen in `energy_cost_tracker.db`. Die Datenbank enthält folge
 ### payments
 `[id, name, valid_from, valid_until, amount_eur, note]`
 
-# Import von historischen Daten
+# Importing historical data
 
-Historische Messdaten lassen sich in den Optionen der Integration unter **Altdaten importieren** als `.xlsx`-Datei hochladen. Home Assistant prüft vor dem Import die Spaltenüberschriften und Messwerte, zeigt eine Vorschau mit Zeitraum und möglichen Duplikaten und importiert erst nach Bestätigung. Bei fehlerhaften Zeilen wird der gesamte Import gestoppt; korrigiere die Datei und lade sie erneut hoch.
+Historical readings can be uploaded as an `.xlsx` file from the integration options under **Import historical data**. Before importing, Home Assistant validates the column headers and readings, shows a preview with the time period and possible duplicates, and imports only after confirmation. If any rows are invalid, the entire import is stopped; correct the file and upload it again.
 
-| Von (UTC nach ISO 8601) | Bis (UTC nach ISO 8601) | Zählerstand - Verbrauch (kWh) | Delta (Verbrauch) in kWh | Anmerkung |
+| From (UTC in ISO 8601 format) | To (UTC in ISO 8601 format) | Meter reading - consumption (kWh) | Delta (consumption) in kWh | Note |
 | :--- | :--- | ---: | ---: | :--- |
-| 2025-07-25T00:00:00Z | 2025-07-25T00:14:59Z | 26087,284 | 0,135 | Abgelesen |
+| 2025-07-25T00:00:00Z | 2025-07-25T00:14:59Z | 26087,284 | 0,135 | Read manually |
 
-Die Quelle wird nicht aus der Excel-Datei gelesen. Der Importer ergänzt `manual_import` in der Spalte `note`; automatisch erfasste Messwerte enthalten dort die Entity-ID des Zählersensors.
+The source is not read from the Excel file. The importer adds `manual_import` to the `note` column; automatically recorded readings contain the meter sensor's entity ID there.
 
-Bereits vorhandene importierte Intervalle werden übersprungen.
+Already imported intervals are skipped.
 
-Die Lovelace-API berechnet den Verbrauch je Intervall als Differenz aus `consumption_meter_kwh` und `consumption_meter_start_kwh`. Beim Excel-Import wird der Startzählerstand aus Zählerstand minus Excel-Delta abgeleitet; das Delta wird nicht als eigene Datenbankspalte gespeichert.
+The Lovelace API calculates consumption for each interval as the difference between `consumption_meter_kwh` and `consumption_meter_start_kwh`. During Excel import, the starting meter reading is derived by subtracting the Excel delta from the meter reading; the delta is not stored as a separate database column.

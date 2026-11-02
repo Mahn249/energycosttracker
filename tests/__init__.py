@@ -1,1 +1,1 @@
-"""Tests for the Stromkostentracker custom integration."""
+"""Tests for the energycosttracker custom integration."""

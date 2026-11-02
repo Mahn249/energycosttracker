@@ -2,11 +2,11 @@
   "config": {
     "step": {
       "user": {
-        "title": "Stromkostentracker",
-        "description": "Set up Stromkostentracker. After setup, manage tariffs in the integration entry options."
+        "title": "energycosttracker",
+        "description": "Set up energycosttracker. After setup, manage tariffs in the integration entry options."
       }
     },
-    "abort": {"already_configured": "Stromkostentracker is already set up."}
+    "abort": {"already_configured": "energycosttracker is already set up."}
   },
   "options": {
     "error": {

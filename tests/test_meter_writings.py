@@ -9,8 +9,8 @@ import sqlite3
 
 import pytest
 
+from energycosttracker import meter_writings
 from homeassistant.core import State
-from stromkostentracker import meter_writings
 
 
 def _prepare_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:

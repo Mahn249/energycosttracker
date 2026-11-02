@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Stromkostentracker",
-        "description": "Richte den Stromkostentracker ein. Die Tarifverwaltung findest du anschließend in den Optionen des Integrationseintrags."
+        "title": "energycosttracker",
+        "description": "Richte energycosttracker ein. Die Tarifverwaltung findest du anschließend in den Optionen des Integrationseintrags."
       }
     },
     "abort": {
-      "already_configured": "Der Stromkostentracker ist bereits eingerichtet."
+      "already_configured": "energycosttracker ist bereits eingerichtet."
     }
   },
   "options": {

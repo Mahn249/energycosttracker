@@ -1,4 +1,4 @@
-"""Sensors for the Stromkostentracker integration."""
+"""Sensors for the energycosttracker integration."""
 
 from datetime import timedelta
 import sqlite3

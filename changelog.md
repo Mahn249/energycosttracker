@@ -1,27 +1,27 @@
 # Version 0.1.0
-erste Alpha Verion zum live testen.
+First alpha version for live testing.
 ## Known Bugs:
-- nach jedem Update muss das Frontend zwangsweisen neu geladen werden (manuell)
-- der Sensor "aktueller Arbeitspreis" wird nicht als Zahl für das Energy Dashboard erkannt
-- auf schmalen Bildschirmen passt die Lovelace Karte noch nicht ganz
+- The frontend must be forcibly reloaded manually after every update.
+- The "Current energy price" sensor is not recognized as a numeric value by the Energy dashboard.
+- The Lovelace card does not quite fit on narrow screens yet.
 
-## geplante Ädnerungen
-- Verbrauchserfassung über Leistung entfernen, da nicht genau genug: zu kleine Verbrauchsbereiche werden als 0 gezählt und daher nicht zur Berechnung herangezogen.
-  - Nutzer mit ausschlißlich Watt Sensoren müssen sich einen eigenen Helfer in HA erzeugen, (am besten dergleiche, der auch im HA-Energy-Dashboard herangezogen wird.)
-- Nur gültige Zählerstände in die Datenbank schreiben, so bleiben veraltete Checkpoints gültig
-- Schalter "Entwickleransicht" in den Integrationseinstellungen = zusätzlich auf der Karte anzeigen:
-  - letzter gespeicherter Messpunkt (Zeitpunkt und Delta zum vorherigen Messpunkt)
-  - Datenqualität ( längster Zeitrum zwischen einzelnen Checkpoints in den letzten 24h)
-  - Zeitraum der Karte über [HA-Funktion, energy-Date-Picker](https://www.home-assistant.io/dashboards/energy/#energy-date-picker) anpassbar gestalten.
+## Planned Changes
+- Remove consumption tracking based on power, as it is not accurate enough: small consumption intervals are counted as 0 and are therefore not included in the calculation.
+  - Users with only power sensors will need to create their own helper in Home Assistant (preferably the same one used by the Home Assistant Energy dashboard).
+- Write only valid meter readings to the database so that older checkpoints remain valid.
+- Add a "Developer view" switch in the integration settings to display the following on the card:
+  - Last saved reading (timestamp and delta from the previous reading)
+  - Data quality (longest period between individual checkpoints in the last 24 hours)
+  - Make the card's date range configurable using the [Home Assistant energy date picker](https://www.home-assistant.io/dashboards/energy/#energy-date-picker).
 
 # Version 0.2.0
-- Die Verbrauchserfassung akzeptiert Energiesensoren mit Geräteklasse `energy` und Einheit `kWh`, unabhängig von der Zustandsklasse.
-- Messwert, und Verbrauchsintervall Transaktion in die Datenbank geschrieben.
-- Fehlende, ungültige oder nicht rekonstruierbare Verbräuche bleiben unbekannt; Zählerwechsel erzeugen keine Differenz zwischen verschiedenen Entitäten.
-- Das Erfassungsintervall ist fest auf 10 Minuten gesetzt; die Option wurde aus den Einstellungen entfernt.
-- Tages- und Monatskosten verwenden dieselbe zeitanteilige Intervallaufteilung über lokale Tages-, Monats- und Tarifgrenzen; Grund- und Verbrauchskosten werden getrennt berechnet.
+- Consumption tracking accepts energy sensors with device class `energy` and unit `kWh`, regardless of state class.
+- The meter reading and consumption interval are written to the database in a single transaction.
+- Missing, invalid, or non-reconstructable consumption remains unknown; meter replacements do not create a difference between different entities.
+- The recording interval is fixed at 10 minutes; the option has been removed from the settings.
+- Daily and monthly costs use the same time-proportional interval allocation across local day, month, and tariff boundaries; base and consumption costs are calculated separately.
 
 # Version 0.2.1
-- Bereinigungen im Code
-- Readme und Changelog angepasst
-- Dateien mit Kommentaren erweitert
+- Code cleanup
+- Updated the README and changelog
+- Added comments to files

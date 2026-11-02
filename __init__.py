@@ -1,4 +1,4 @@
-"""Stromkostentracker Home Assistant integration."""
+"""energycosttracker Home Assistant integration."""
 
 import hashlib
 from pathlib import Path
@@ -17,8 +17,8 @@ from .websocket import (
     websocket_get_year_data,
 )
 
-LOVELACE_CARD_PATH = "/stromkostentracker_static/stromkostentracker-card.js"
-LOVELACE_CARD_FILE = Path(__file__).parent / "lovelace" / "stromkostentracker-card.js"
+LOVELACE_CARD_PATH = "/energycosttracker_static/energycosttracker-card.js"
+LOVELACE_CARD_FILE = Path(__file__).parent / "lovelace" / "energycosttracker-card.js"
 PLATFORMS = [Platform.SENSOR]
 
 

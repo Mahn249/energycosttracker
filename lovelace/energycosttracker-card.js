@@ -1,4 +1,4 @@
-class StromkostentrackerCard extends HTMLElement {
+class EnergyCostTrackerCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -54,7 +54,7 @@ class StromkostentrackerCard extends HTMLElement {
     try {
       if (this._availableYears === null) {
         const availableYears = await this._hass.callWS({
-          type: "stromkostentracker/available_years",
+          type: "energycosttracker/available_years",
         });
         if (requestId !== this._requestId) {
           return;
@@ -70,11 +70,11 @@ class StromkostentrackerCard extends HTMLElement {
       data = await this._hass.callWS(
         this._view === "year"
           ? {
-              type: "stromkostentracker/year_data",
+              type: "energycosttracker/year_data",
               year: this._year,
             }
           : {
-              type: "stromkostentracker/month_data",
+              type: "energycosttracker/month_data",
               year: this._year,
               month: this._month,
             },
@@ -337,17 +337,17 @@ class StromkostentrackerCard extends HTMLElement {
   }
 }
 
-const CARD_TYPE = "stromkostentracker-card";
+const CARD_TYPE = "energycosttracker-card";
 
 if (!customElements.get(CARD_TYPE)) {
-  customElements.define(CARD_TYPE, StromkostentrackerCard);
+  customElements.define(CARD_TYPE, EnergyCostTrackerCard);
 }
 
 window.customCards = window.customCards || [];
 if (!window.customCards.some((card) => card.type === CARD_TYPE)) {
   window.customCards.push({
     type: CARD_TYPE,
-    name: "Stromkostentracker",
-    description: "Vergleicht tägliche Stromkosten mit dem Abschlag.",
+    name: "energycosttracker",
+    description: "Compares daily electricity costs with the payment amount.",
   });
 }

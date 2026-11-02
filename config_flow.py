@@ -31,8 +31,8 @@ def _inspect_uploaded_excel(hass: HomeAssistant, file_id: str) -> ExcelInspectio
         return inspect_excel(file_path)
 
 
-class StromkostentrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Set up Stromkostentracker in Home Assistant."""
+class EnergyCostTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Set up energycosttracker in Home Assistant."""
 
     VERSION = 1
 
@@ -43,7 +43,7 @@ class StromkostentrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
         if user_input is not None:
-            return self.async_create_entry(title="Stromkostentracker", data={})
+            return self.async_create_entry(title="energycosttracker", data={})
         return self.async_show_form(step_id="user", data_schema=probatio.Schema({}))
 
     @staticmethod
@@ -52,10 +52,10 @@ class StromkostentrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the tariff management options flow."""
-        return StromkostentrackerOptionsFlow()
+        return EnergyCostTrackerOptionsFlow()
 
 
-class StromkostentrackerOptionsFlow(config_entries.OptionsFlow):
+class EnergyCostTrackerOptionsFlow(config_entries.OptionsFlow):
     """Add, edit, and remove tariff periods in energy_cost_tracker.db."""
 
     async def async_step_init(

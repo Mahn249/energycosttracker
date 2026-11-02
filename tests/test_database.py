@@ -5,7 +5,7 @@ import sqlite3
 
 import pytest
 
-from stromkostentracker import database
+from energycosttracker import database
 
 
 def test_initialize_database_creates_current_tables(

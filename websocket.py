@@ -1,4 +1,4 @@
-"""WebSocket API for the Stromkostentracker Lovelace card."""
+"""WebSocket API for the energycosttracker Lovelace card."""
 
 from typing import Any
 
@@ -14,7 +14,7 @@ from .lovelace_api import get_available_years, get_month_data, get_year_data
 
 @websocket_api.websocket_command(
     {
-        probatio.Required("type"): "stromkostentracker/available_years",
+        probatio.Required("type"): "energycosttracker/available_years",
     }
 )
 @websocket_api.async_response
@@ -30,7 +30,7 @@ async def websocket_get_available_years(
 
 @websocket_api.websocket_command(
     {
-        probatio.Required("type"): "stromkostentracker/month_data",
+        probatio.Required("type"): "energycosttracker/month_data",
         probatio.Required("year"): probatio.All(int, probatio.Range(min=1, max=9998)),
         probatio.Required("month"): probatio.All(int, probatio.Range(min=1, max=12)),
     }
@@ -53,7 +53,7 @@ async def websocket_get_month_data(
 
 @websocket_api.websocket_command(
     {
-        probatio.Required("type"): "stromkostentracker/year_data",
+        probatio.Required("type"): "energycosttracker/year_data",
         probatio.Required("year"): probatio.All(int, probatio.Range(min=1, max=9998)),
     }
 )

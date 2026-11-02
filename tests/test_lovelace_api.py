@@ -1,4 +1,4 @@
-"""Tests for data exposed to the Stromkostentracker Lovelace card."""
+"""Tests for data exposed to the energycosttracker Lovelace card."""
 
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from stromkostentracker import lovelace_api
+from energycosttracker import lovelace_api
 
 
 def test_get_available_years_returns_years_with_intervals(

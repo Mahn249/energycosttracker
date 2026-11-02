@@ -1,4 +1,4 @@
-"""Entities for the Stromkostentracker integration."""
+"""Entities for the energycosttracker integration."""
 
 from datetime import datetime
 import logging

@@ -7,8 +7,8 @@ import sqlite3
 from openpyxl import Workbook
 import pytest
 
-from stromkostentracker.imports import import_excel
-from stromkostentracker.imports.inspect_excel import (
+from energycosttracker.imports import import_excel
+from energycosttracker.imports.inspect_excel import (
     EXPECTED_HEADERS,
     InvalidExcelFile,
     inspect_excel as inspect_workbook,
