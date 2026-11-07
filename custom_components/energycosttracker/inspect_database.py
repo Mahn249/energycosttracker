@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 
-DATABASE_PATH = Path(__file__).parent / "energy_cost_tracker.db"
+DATABASE_PATH = Path(__file__).resolve().parents[2] / "energy_cost_tracker.db"
 IMPORT_NOTE = "manual_import"
 
 

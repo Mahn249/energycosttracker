@@ -14,6 +14,7 @@ from homeassistant.components.lovelace.resources import ResourceStorageCollectio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CONF_METER_ENTITY, DEFAULT_INTERVAL_MINUTES
@@ -28,6 +29,7 @@ from .websocket import (
 _LOGGER = logging.getLogger(__name__)
 
 LOVELACE_CARD_PATH = "/energycosttracker_static/energycosttracker-card.js"
+LEGACY_LOVELACE_CARD_PATH = "/stromkostentracker_static/stromkostentracker-card.js"
 LOVELACE_CARD_FILE = Path(__file__).parent / "lovelace" / "energycosttracker-card.js"
 CONFIG_SCHEMA = cv.config_entry_only_config_schema
 PLATFORMS = [Platform.SENSOR]
