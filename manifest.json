@@ -4,10 +4,11 @@
   "codeowners": ["@Mahn249"],
   "config_flow": true,
   "dependencies": ["file_upload", "frontend", "lovelace"],
-  "documentation": "https://github.com/Mahn249/energycosttracker",
   "issue_tracker": "https://github.com/Mahn249/energycosttracker/issues",
   "iot_class": "calculated",
+  "integration_type": "service",
   "requirements": ["openpyxl==3.1.5"],
   "single_config_entry": true,
-  "version": "0.3.1"
+  "version": "0.3.2",
+  "categories": ["energy.energy_prices","energy.meters_monitoring","finance"]
 }
