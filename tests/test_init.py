@@ -1,5 +1,7 @@
 """Tests for config-entry setup and meter writer lifecycle."""
 
+# ruff: noqa: SLF001
+
 import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -13,7 +15,80 @@ import pytest
 import energycosttracker as integration
 from energycosttracker import meter_writings
 from energycosttracker.const import CONF_METER_ENTITY, DEFAULT_INTERVAL_MINUTES
+from homeassistant.components.lovelace.const import LOVELACE_DATA
+from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.core import State
+
+
+@pytest.mark.asyncio
+async def test_register_card_resource_for_lovelace_storage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A dashboard resource loads the card module with the dashboard."""
+    resources = Mock(spec=ResourceStorageCollection)
+    resources.loaded = False
+    resources.async_items.return_value = []
+    resources.async_load = AsyncMock()
+    resources.async_create_item = AsyncMock()
+    hass = SimpleNamespace(data={LOVELACE_DATA: SimpleNamespace(resources=resources)})
+    add_extra_module = Mock()
+    monkeypatch.setattr(integration.frontend, "add_extra_js_url", add_extra_module)
+
+    await integration._async_register_card_resource(
+        hass, "/energycosttracker_static/energycosttracker-card.js?v=test"
+    )
+
+    resources.async_load.assert_awaited_once()
+    resources.async_create_item.assert_awaited_once_with(
+        {
+            "res_type": "module",
+            "url": "/energycosttracker_static/energycosttracker-card.js?v=test",
+        }
+    )
+    add_extra_module.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_register_card_resource_updates_existing_and_legacy_urls() -> None:
+    """An existing current or legacy resource is replaced instead of duplicated."""
+    for existing_url in (
+        "/energycosttracker_static/energycosttracker-card.js?v=old",
+        "/stromkostentracker_static/stromkostentracker-card.js?v=old",
+    ):
+        resources = Mock(spec=ResourceStorageCollection)
+        resources.loaded = True
+        resources.async_items.return_value = [
+            {"id": "resource_id", "url": existing_url}
+        ]
+        resources.async_update_item = AsyncMock()
+        resources.async_create_item = AsyncMock()
+        hass = SimpleNamespace(
+            data={LOVELACE_DATA: SimpleNamespace(resources=resources)}
+        )
+
+        await integration._async_register_card_resource(
+            hass, "/energycosttracker_static/energycosttracker-card.js?v=new"
+        )
+
+        resources.async_update_item.assert_awaited_once_with(
+            "resource_id",
+            {"url": "/energycosttracker_static/energycosttracker-card.js?v=new"},
+        )
+        resources.async_create_item.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_register_card_resource_falls_back_without_storage_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """YAML dashboards continue using Home Assistant's extra-module loader."""
+    hass = SimpleNamespace(data={})
+    add_extra_module = Mock()
+    monkeypatch.setattr(integration.frontend, "add_extra_js_url", add_extra_module)
+
+    await integration._async_register_card_resource(hass, "/card.js")
+
+    add_extra_module.assert_called_once_with(hass, "/card.js")
 
 
 def _fake_hass() -> SimpleNamespace:

@@ -5,9 +5,12 @@ import hashlib
 import logging
 from pathlib import Path
 import sqlite3
+from urllib.parse import urlsplit
 
 from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.lovelace.const import LOVELACE_DATA
+from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -25,6 +28,7 @@ from .websocket import (
 _LOGGER = logging.getLogger(__name__)
 
 LOVELACE_CARD_PATH = "/energycosttracker_static/energycosttracker-card.js"
+LEGACY_LOVELACE_CARD_PATH = "/stromkostentracker_static/stromkostentracker-card.js"
 LOVELACE_CARD_FILE = Path(__file__).parent / "lovelace" / "energycosttracker-card.js"
 PLATFORMS = [Platform.SENSOR]
 
@@ -47,8 +51,31 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
         ]
     )
-    frontend.add_extra_js_url(hass, card_url)
+    await _async_register_card_resource(hass, card_url)
     return True
+
+
+async def _async_register_card_resource(hass: HomeAssistant, card_url: str) -> None:
+    """Register the card as a Lovelace resource so dashboards await its module."""
+    if (lovelace_data := hass.data.get(LOVELACE_DATA)) is None or not isinstance(
+        resources := lovelace_data.resources, ResourceStorageCollection
+    ):
+        frontend.add_extra_js_url(hass, card_url)
+        return
+
+    if not resources.loaded:
+        await resources.async_load()
+        resources.loaded = True
+
+    card_paths = {LOVELACE_CARD_PATH, LEGACY_LOVELACE_CARD_PATH}
+    for resource in resources.async_items():
+        if urlsplit(resource["url"]).path not in card_paths:
+            continue
+        if resource["url"] != card_url:
+            await resources.async_update_item(resource["id"], {"url": card_url})
+        return
+
+    await resources.async_create_item({"res_type": "module", "url": card_url})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

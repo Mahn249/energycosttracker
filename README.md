@@ -11,7 +11,7 @@ In the integration settings, under **Configure consumption recording**, select a
 Then add payment periods and tariffs, including their validity periods.
 
 Finally, add the Lovelace card to one of your dashboards.
-In the dashboard editor, add the card using **Add card → energycosttracker**.
+In the dashboard editor, add the card using **Add card → energycosttracker**. In storage-mode dashboards, the integration manages its JavaScript module as a dashboard resource and updates its cache-busting URL when the card changes. Do not add a second manual resource. YAML-mode dashboards continue to load the card through Home Assistant's extra-module mechanism.
 
 # Features
 
