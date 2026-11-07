@@ -98,7 +98,7 @@ class MeterIntervalWriter:
     hass: HomeAssistant
     entity_id: str
     interval: timedelta
-    _unsubscribe_interval: CALLBACK_TYPE = field(init=False)
+    _unsubscribe_interval: CALLBACK_TYPE | None = field(init=False, default=None)
 
     @classmethod
     async def async_create(
@@ -106,26 +106,32 @@ class MeterIntervalWriter:
         hass: HomeAssistant,
         entity_id: str,
         interval: timedelta,
-    ) -> "MeterIntervalWriter":
-        """Validate the selected sensor and prepare the database."""
-        initial_value = validate_meter_state(hass.states.get(entity_id), entity_id)
-        await hass.async_add_executor_job(
-            _record_meter_reading, entity_id, initial_value, dt_util.utcnow()
-        )
-        return cls(hass, entity_id, interval)
+    ) -> MeterIntervalWriter:
+        """Create a writer and persist an initial reading when it is valid."""
+        writer = cls(hass, entity_id, interval)
+        await writer._async_record_reading(dt_util.utcnow())
+        return writer
 
     def async_start(self) -> None:
         """Start periodic energy meter sampling."""
+        if self._unsubscribe_interval is not None:
+            return
         self._unsubscribe_interval = async_track_time_interval(
             self.hass, self._async_finish_interval, self.interval
         )
 
     def async_stop(self) -> None:
         """Stop periodic energy meter sampling."""
-        self._unsubscribe_interval()
+        if self._unsubscribe_interval is not None:
+            self._unsubscribe_interval()
+            self._unsubscribe_interval = None
 
     async def _async_finish_interval(self, now: datetime) -> None:
         """Validate and atomically persist the latest cumulative reading."""
+        await self._async_record_reading(now)
+
+    async def _async_record_reading(self, timestamp: datetime) -> None:
+        """Record a reading when the selected sensor and database are available."""
         try:
             value_kwh = validate_meter_state(
                 self.hass.states.get(self.entity_id), self.entity_id
@@ -140,9 +146,9 @@ class MeterIntervalWriter:
 
         try:
             stored = await self.hass.async_add_executor_job(
-                _record_meter_reading, self.entity_id, value_kwh, now
+                _record_meter_reading, self.entity_id, value_kwh, timestamp
             )
-        except (OSError, sqlite3.Error):
+        except OSError, sqlite3.Error, ValueError:
             _LOGGER.exception(
                 "Unable to store cumulative energy reading for %s",
                 self.entity_id,

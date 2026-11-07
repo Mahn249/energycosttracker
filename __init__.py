@@ -1,7 +1,10 @@
 """energycosttracker Home Assistant integration."""
 
+from datetime import timedelta
 import hashlib
+import logging
 from pathlib import Path
+import sqlite3
 
 from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import StaticPathConfig
@@ -10,12 +13,16 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
+from .const import CONF_METER_ENTITY, DEFAULT_INTERVAL_MINUTES
 from .database import initialize_database
+from .meter_writings import async_setup_meter_writer
 from .websocket import (
     websocket_get_available_years,
     websocket_get_month_data,
     websocket_get_year_data,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 LOVELACE_CARD_PATH = "/energycosttracker_static/energycosttracker-card.js"
 LOVELACE_CARD_FILE = Path(__file__).parent / "lovelace" / "energycosttracker-card.js"
@@ -47,6 +54,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the integration from a config entry."""
     await hass.async_add_executor_job(initialize_database)
+    if entity_id := entry.options.get(CONF_METER_ENTITY):
+        try:
+            writer = await async_setup_meter_writer(
+                hass,
+                entity_id,
+                timedelta(minutes=DEFAULT_INTERVAL_MINUTES),
+            )
+        except OSError, sqlite3.Error:
+            _LOGGER.exception("Unable to start consumption recording for %s", entity_id)
+        else:
+            entry.async_on_unload(writer.async_stop)
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
