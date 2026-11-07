@@ -1,7 +1,7 @@
 {
   "domain": "energycosttracker",
   "name": "Energy Cost Tracker",
-  "codeowners": ["@Mahn249"],
+  "codeowners": [@Mahn249],
   "config_flow": true,
   "dependencies": ["file_upload", "frontend", "lovelace"],
   "documentation": "https://github.com/Mahn249/energycosttracker",
