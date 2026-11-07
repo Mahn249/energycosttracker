@@ -1,6 +1,3 @@
-# Work in progress
-- See changelog.md for the history
-
 # energycosttracker
 Database for displaying historical tariffs, payments, and consumption.
 A Home Assistant custom integration for calculating electricity costs based on daily energy consumption.
