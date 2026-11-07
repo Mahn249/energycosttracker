@@ -1,12 +1,13 @@
 {
   "domain": "energycosttracker",
-  "name": "energycosttracker",
+  "name": "Energy Cost Tracker",
   "codeowners": ["@Mahn249"],
   "config_flow": true,
   "dependencies": ["file_upload", "frontend", "lovelace"],
   "documentation": "https://github.com/Mahn249/energycosttracker",
+  "issue_tracker": "https://github.com/Mahn249/energycosttracker/issues",
   "iot_class": "calculated",
   "requirements": ["openpyxl==3.1.5"],
-  "version": "0.2.3",
-  "single_config_entry": true
+  "single_config_entry": true,
+  "version": "0.3.1"
 }
