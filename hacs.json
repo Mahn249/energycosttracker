@@ -1,7 +1,5 @@
 {
   "name": "Energy Cost Tracker",
-  "version": "0.3.2",
-  "domain": "energycosttracker",
   "issue_tracker": "https://github.com/Mahn249/energycosttracker/issues",
   "integration_type": "service"
 }
