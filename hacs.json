@@ -5,6 +5,5 @@
   "domain": "energycosttracker",
   "documentation": "https://github.com/Mahn249/energycosttracker",
   "issue_tracker": "https://github.com/Mahn249/energycosttracker/issues",
-  "codeowners": ["@Mahn249"],
   "integration_type": "service"
 }
