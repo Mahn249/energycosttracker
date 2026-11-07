@@ -78,7 +78,7 @@ def _valid_number(value: Any) -> Decimal | None:
         return None
     try:
         result = Decimal(str(value))
-    except InvalidOperation, ValueError:
+    except (InvalidOperation, ValueError):
         return None
     return result if result.is_finite() else None
 
