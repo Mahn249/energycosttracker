@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entity_id,
                 timedelta(minutes=DEFAULT_INTERVAL_MINUTES),
             )
-        except OSError, sqlite3.Error:
+        except (OSError, sqlite3.Error):
             _LOGGER.exception("Unable to start consumption recording for %s", entity_id)
         else:
             entry.async_on_unload(writer.async_stop)

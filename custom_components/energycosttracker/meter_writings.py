@@ -148,7 +148,7 @@ class MeterIntervalWriter:
             stored = await self.hass.async_add_executor_job(
                 _record_meter_reading, self.entity_id, value_kwh, timestamp
             )
-        except OSError, sqlite3.Error, ValueError:
+        except (OSError, sqlite3.Error, ValueError):
             _LOGGER.exception(
                 "Unable to store cumulative energy reading for %s",
                 self.entity_id,

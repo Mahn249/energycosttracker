@@ -2,6 +2,8 @@
 Database for displaying historical tariffs, payments, and consumption.
 A Home Assistant custom integration for calculating electricity costs based on daily energy consumption.
 
+![Screenshot](screenshot.jpg)
+
 # Configuration
 After installation, configure tariffs and payments with their corresponding periods in the integration settings.
 In the integration settings, under **Configure consumption recording**, select an energy sensor with device class `energy` and unit `kWh`. Power sensors and energy sensors with other units are not supported.

@@ -144,7 +144,7 @@ class EnergyCostTrackerOptionsFlow(config_entries.OptionsFlow):
                 result: ImportResult = await self.hass.async_add_executor_job(
                     import_excel, self._legacy_import_rows
                 )
-            except OSError, sqlite3.Error, ValueError:
+            except (OSError, sqlite3.Error, ValueError):
                 errors = {"base": "database_error"}
             else:
                 return self.async_abort(
