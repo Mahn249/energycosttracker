@@ -1,5 +1,4 @@
 {
   "name": "Energy Cost Tracker",
-  "issue_tracker": "https://github.com/Mahn249/energycosttracker/issues",
-  "integration_type": "service"
+  "render_readme": true
 }
