@@ -100,6 +100,106 @@ def test_read_month_data_uses_current_meter_interval_schema(
     assert result["days"][0]["consumption_source"] == "intervals"
 
 
+def test_get_period_data_splits_costs_across_months(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A selected range reuses local-day allocation and each month's tariff."""
+    monkeypatch.setattr(
+        lovelace_api,
+        "_read_period_data",
+        lambda *_args: (
+            [
+                {
+                    "interval_start_utc": "2026-10-31T23:30:00+00:00",
+                    "interval_end_utc": "2026-11-01T00:30:00+00:00",
+                    "consumption_meter_start_kwh": 100,
+                    "consumption_meter_kwh": 102,
+                    "note": "sensor.energy",
+                }
+            ],
+            [
+                {
+                    "valid_from": "2026-10-01",
+                    "valid_until": "2026-10-31",
+                    "work_price_per_kwh": 0.3,
+                    "base_price_per_month": 31,
+                },
+                {
+                    "valid_from": "2026-11-01",
+                    "valid_until": None,
+                    "work_price_per_kwh": 0.4,
+                    "base_price_per_month": 60,
+                },
+            ],
+            [
+                {
+                    "valid_from": "2026-10-01",
+                    "valid_until": "2026-10-31",
+                    "amount_eur": 31,
+                },
+                {
+                    "valid_from": "2026-11-01",
+                    "valid_until": None,
+                    "amount_eur": 60,
+                },
+            ],
+        ),
+    )
+    monkeypatch.setattr(
+        lovelace_api.dt_util,
+        "now",
+        lambda: datetime(2026, 11, 2, tzinfo=UTC),
+    )
+
+    result = lovelace_api.get_period_data(
+        "2026-10-31T00:00:00",
+        "2026-11-01T23:59:59",
+        UTC,
+    )
+
+    assert result["granularity"] == "day"
+    assert [day["date"] for day in result["days"]] == ["2026-10-31", "2026-11-01"]
+    assert [day["known_consumption_kwh"] for day in result["days"]] == [1, 1]
+    assert [day["known_cost_eur"] for day in result["days"]] == pytest.approx(
+        [1.3, 2.4]
+    )
+    assert [day["daily_payment_eur"] for day in result["days"]] == pytest.approx([1, 2])
+
+
+@pytest.mark.parametrize(
+    ("end", "granularity", "result_key", "maximum_items"),
+    [
+        ("2026-02-01T23:59:59", "day", "days", 32),
+        ("2026-02-02T23:59:59", "month", "months", 24),
+        ("2027-12-01T23:59:59", "year", "years", 24),
+    ],
+)
+def test_get_period_data_selects_chart_granularity(
+    end: str,
+    granularity: str,
+    result_key: str,
+    maximum_items: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The returned chart data is bounded by the selected range's granularity."""
+    monkeypatch.setattr(lovelace_api, "_read_period_data", lambda *_args: ([], [], []))
+    monkeypatch.setattr(
+        lovelace_api.dt_util,
+        "now",
+        lambda: datetime(2028, 1, 1, tzinfo=UTC),
+    )
+
+    result = lovelace_api.get_period_data(
+        "2026-01-01T00:00:00",
+        end,
+        UTC,
+    )
+
+    assert result["granularity"] == granularity
+    assert result_key in result
+    assert len(result[result_key]) <= maximum_items
+
+
 def test_calculate_month_data_keeps_days_with_unknown_intervals_unknown() -> None:
     """A partial sum cannot hide an unknown quantity within that day."""
     day = date(2026, 10, 26)

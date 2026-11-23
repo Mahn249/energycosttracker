@@ -12,16 +12,16 @@ from homeassistant.util import dt as dt_util
 DATABASE_PATH = Path(__file__).resolve().parents[2] / "energy_cost_tracker.db"
 
 
-def _read_month_data(
-    year: int, month: int, local_timezone: tzinfo
+def _read_period_data(
+    start_date: date, end_date: date, local_timezone: tzinfo
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Read intervals, tariffs, and payment periods needed for one month."""
-    month_start = datetime.combine(date(year, month, 1), time.min, local_timezone)
-    next_month_start = datetime.combine(
-        date(year + (month == 12), month % 12 + 1, 1), time.min, local_timezone
-    )
-    query_start = dt_util.as_utc(month_start).isoformat()
-    query_end = dt_util.as_utc(next_month_start).isoformat()
+    """Read intervals, tariffs, and payment periods intersecting a date range."""
+    query_start = dt_util.as_utc(
+        datetime.combine(start_date, time.min, local_timezone)
+    ).isoformat()
+    query_end = dt_util.as_utc(
+        datetime.combine(end_date + timedelta(days=1), time.min, local_timezone)
+    ).isoformat()
 
     if not DATABASE_PATH.is_file():
         raise FileNotFoundError(f"Datenbank nicht gefunden: {DATABASE_PATH}")
@@ -49,7 +49,7 @@ def _read_month_data(
                    WHERE valid_from <= ?
                      AND (valid_until IS NULL OR valid_until >= ?)
                    ORDER BY valid_from""",
-                (next_month_start.date().isoformat(), month_start.date().isoformat()),
+                (end_date.isoformat(), start_date.isoformat()),
             ).fetchall()
         ]
         payments = [
@@ -60,10 +60,19 @@ def _read_month_data(
                    WHERE valid_from <= ?
                      AND (valid_until IS NULL OR valid_until >= ?)
                    ORDER BY valid_from""",
-                (next_month_start.date().isoformat(), month_start.date().isoformat()),
+                (end_date.isoformat(), start_date.isoformat()),
             ).fetchall()
         ]
     return intervals, tariffs, payments
+
+
+def _read_month_data(
+    year: int, month: int, local_timezone: tzinfo
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Read intervals, tariffs, and payment periods needed for one month."""
+    month_start = date(year, month, 1)
+    month_end = date(year, month, monthrange(year, month)[1])
+    return _read_period_data(month_start, month_end, local_timezone)
 
 
 def _parse_timestamp(value: str) -> datetime:
@@ -78,7 +87,7 @@ def _valid_number(value: Any) -> Decimal | None:
         return None
     try:
         result = Decimal(str(value))
-    except (InvalidOperation, ValueError):
+    except InvalidOperation, ValueError:
         return None
     return result if result.is_finite() else None
 
@@ -476,3 +485,160 @@ def get_year_data(year: int, local_timezone: tzinfo) -> dict[str, Any]:
             "cost_days_count": cost_days_count,
         }
     )
+
+
+def _parse_period_datetime(value: str, local_timezone: tzinfo) -> datetime:
+    """Parse a wall-time timestamp or normalize an aware timestamp locally."""
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=local_timezone)
+    return parsed.astimezone(local_timezone)
+
+
+def _sum_day_values(days: list[dict[str, Any]], key: str) -> Decimal:
+    """Sum a daily value where unknown amounts are excluded."""
+    return sum(
+        (day[key] for day in days if day[key] is not None),
+        Decimal(0),
+    )
+
+
+def get_period_data(start: str, end: str, local_timezone: tzinfo) -> dict[str, Any]:
+    """Calculate daily, monthly, or yearly data for an inclusive local date range."""
+    start_datetime = _parse_period_datetime(start, local_timezone)
+    end_datetime = _parse_period_datetime(end, local_timezone)
+    if end_datetime < start_datetime:
+        raise ValueError("Das Enddatum muss nach dem Startdatum liegen.")
+
+    start_date = start_datetime.date()
+    end_date = end_datetime.date()
+    day_count = (end_date - start_date).days + 1
+    granularity = "day" if day_count <= 32 else "year" if day_count >= 700 else "month"
+    intervals, tariffs, payments = _read_period_data(
+        start_date, end_date, local_timezone
+    )
+
+    intervals_by_month: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for interval in intervals:
+        interval_start = _parse_timestamp(interval["interval_start_utc"])
+        interval_end = _parse_timestamp(interval["interval_end_utc"])
+        if interval_end <= interval_start:
+            continue
+        first_day = max(interval_start.astimezone(local_timezone).date(), start_date)
+        last_day = min(
+            (interval_end - timedelta(microseconds=1))
+            .astimezone(local_timezone)
+            .date(),
+            end_date,
+        )
+        month_start = date(first_day.year, first_day.month, 1)
+        last_month = date(last_day.year, last_day.month, 1)
+        while month_start <= last_month:
+            intervals_by_month.setdefault(
+                (month_start.year, month_start.month), []
+            ).append(interval)
+            month_start = date(
+                month_start.year + (month_start.month == 12),
+                month_start.month % 12 + 1,
+                1,
+            )
+
+    now = dt_util.now()
+    today = now.astimezone(local_timezone).date()
+    selected_days: list[dict[str, Any]] = []
+    monthly_data: list[dict[str, Any]] = []
+    month_start = date(start_date.year, start_date.month, 1)
+    last_month = date(end_date.year, end_date.month, 1)
+    while month_start <= last_month:
+        month_result = _calculate_month_data(
+            month_start.year,
+            month_start.month,
+            intervals_by_month.get((month_start.year, month_start.month), []),
+            tariffs,
+            payments,
+            now=now,
+            local_timezone=local_timezone,
+        )
+        month_days = [
+            day
+            for day in month_result["days"]
+            if start_date.isoformat() <= day["date"] <= end_date.isoformat()
+        ]
+        selected_days.extend(month_days)
+        elapsed_days = [day for day in month_days if day["date"] <= today.isoformat()]
+        has_cost_data = any(
+            day["base_cost_eur"] is not None or day["work_cost_eur"] is not None
+            for day in elapsed_days
+        )
+        monthly_data.append(
+            {
+                "year": month_start.year,
+                "month": month_start.month,
+                "costs_eur": (
+                    _sum_day_values(elapsed_days, "known_cost_eur")
+                    if has_cost_data
+                    else None
+                ),
+                "payment_eur": _sum_day_values(month_days, "daily_payment_eur"),
+                "payment_to_date_eur": _sum_day_values(
+                    elapsed_days, "daily_payment_eur"
+                ),
+                "cost_days_count": sum(
+                    day["total_cost_eur"] is not None for day in elapsed_days
+                ),
+            }
+        )
+        month_start = date(
+            month_start.year + (month_start.month == 12),
+            month_start.month % 12 + 1,
+            1,
+        )
+
+    elapsed_days = [day for day in selected_days if day["date"] <= today.isoformat()]
+    payment_to_date = _sum_day_values(elapsed_days, "daily_payment_eur")
+    costs_to_date = _sum_day_values(elapsed_days, "known_cost_eur")
+    summary = {
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "current_date": today.isoformat(),
+        "granularity": granularity,
+        "payment_to_date_eur": payment_to_date,
+        "costs_to_date_eur": costs_to_date,
+        "balance_to_date_eur": payment_to_date - costs_to_date,
+        "cost_days_count": sum(
+            day["total_cost_eur"] is not None for day in elapsed_days
+        ),
+    }
+
+    if granularity == "day":
+        summary["days"] = selected_days
+    elif granularity == "month":
+        summary["months"] = monthly_data
+    else:
+        years: dict[int, list[dict[str, Any]]] = {}
+        for month in monthly_data:
+            years.setdefault(month["year"], []).append(month)
+        summary["years"] = [
+            {
+                "year": year,
+                "costs_eur": (
+                    sum(
+                        (
+                            month["costs_eur"]
+                            for month in months
+                            if month["costs_eur"] is not None
+                        ),
+                        Decimal(0),
+                    )
+                    if any(month["costs_eur"] is not None for month in months)
+                    else None
+                ),
+                "payment_eur": sum(
+                    (month["payment_eur"] for month in months), Decimal(0)
+                ),
+                "cost_days_count": sum(month["cost_days_count"] for month in months),
+            }
+            for year, months in years.items()
+        ]
+
+    return _json_numbers(summary)

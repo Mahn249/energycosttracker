@@ -32,7 +32,16 @@ Daily and monthly costs are based on the same intervals. Intervals that cross lo
 Tariff management reads and updates the tables in `energy_cost_tracker.db` directly. The database is stored in the Home Assistant configuration directory alongside `configuration.yaml`.
 
 ## Lovelace card
- While the integration is set up, the card module is loaded automatically in the Home Assistant frontend. The view, month, and year are selected using dropdowns; the year dropdown lists years with saved readings. The monthly view compares daily costs and the daily payment. In the yearly view, each bar shows one month's costs compared with the monthly payment. For the current month, costs and payments are compared up to today; future months have no consumption costs.
+While the integration is set up, the card module is loaded automatically in the Home Assistant frontend. The card follows the Home Assistant Energy dashboard date range through its `EnergyCollection`; it does not provide a separate date selector. Configure the same collection key used by the Energy dashboard:
+
+```yaml
+type: custom:energycosttracker-card
+collection_key: energy_dashboard
+```
+
+The default key is `energy_dashboard`. Collection keys must begin with `energy_`, and independent Energy collections can be selected to support multiple trackers. The chart automatically displays daily values for ranges up to 32 days, monthly values for ranges of 33–699 days, and yearly values from 700 days onward. Comparison periods are ignored. Cost and payment calculations retain local-day boundaries, the applicable tariff and payment periods, and daylight-saving-time handling.
+
+The visual editor lets you set the card width as a percentage (10–100%), the Energy collection key, and the colors for costs under and over the payment amount. The default colors are blue (`#03a9f4`) and red (`#db4437`).
 
 
 ## Data structure

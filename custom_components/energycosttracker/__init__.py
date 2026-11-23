@@ -23,6 +23,7 @@ from .meter_writings import async_setup_meter_writer
 from .websocket import (
     websocket_get_available_years,
     websocket_get_month_data,
+    websocket_get_period_data,
     websocket_get_year_data,
 )
 
@@ -39,6 +40,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the integration."""
     websocket_api.async_register_command(hass, websocket_get_available_years)
     websocket_api.async_register_command(hass, websocket_get_month_data)
+    websocket_api.async_register_command(hass, websocket_get_period_data)
     websocket_api.async_register_command(hass, websocket_get_year_data)
     card_hash = await hass.async_add_executor_job(
         lambda: hashlib.sha256(LOVELACE_CARD_FILE.read_bytes()).hexdigest()[:12]
@@ -90,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entity_id,
                 timedelta(minutes=DEFAULT_INTERVAL_MINUTES),
             )
-        except (OSError, sqlite3.Error):
+        except OSError, sqlite3.Error:
             _LOGGER.exception("Unable to start consumption recording for %s", entity_id)
         else:
             entry.async_on_unload(writer.async_stop)

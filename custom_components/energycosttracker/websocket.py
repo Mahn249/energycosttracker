@@ -9,7 +9,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
-from .lovelace_api import get_available_years, get_month_data, get_year_data
+from .lovelace_api import (
+    get_available_years,
+    get_month_data,
+    get_period_data,
+    get_year_data,
+)
 
 
 @websocket_api.websocket_command(
@@ -70,4 +75,30 @@ async def websocket_get_year_data(
     result = await hass.async_add_executor_job(
         get_year_data, msg["year"], local_timezone
     )
+    connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command(
+    {
+        probatio.Required("type"): "energycosttracker/period_data",
+        probatio.Required("start"): probatio.All(str, probatio.NonEmpty()),
+        probatio.Required("end"): probatio.All(str, probatio.NonEmpty()),
+    }
+)
+@websocket_api.async_response
+async def websocket_get_period_data(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return calculated data for an inclusive local date range."""
+    if not (local_timezone := dt_util.get_time_zone(hass.config.time_zone)):
+        raise HomeAssistantError("Home Assistant time zone is not configured")
+
+    try:
+        result = await hass.async_add_executor_job(
+            get_period_data, msg["start"], msg["end"], local_timezone
+        )
+    except ValueError as err:
+        raise HomeAssistantError(f"Ungültiger Zeitraum: {err}") from err
     connection.send_result(msg["id"], result)
