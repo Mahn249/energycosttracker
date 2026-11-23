@@ -12,11 +12,11 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
 EXPECTED_HEADERS = (
-    "Von (UTC nach ISO 8601)",
-    "Bis (UTC nach ISO 8601)",
-    "Zählerstand - Verbrauch (kWh)",
-    "Delta (Verbrauch) in kWh",
-    "Anmerkung",
+    "From (UTC in ISO 8601 format)",
+    "To (UTC in ISO 8601 format)",
+    "Meter reading - consumption (kWh)",
+    "Delta (consumption) in kWh",
+    "Note",
 )
 
 
@@ -52,7 +52,7 @@ def _parse_timestamp(value: object) -> datetime:
     elif isinstance(value, str):
         parsed = datetime.fromisoformat(value.strip())
     else:
-        raise TypeError("Zeitstempel fehlt oder ist ungültig")
+        raise TypeError("Timestamp is missing or invalid")
 
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
